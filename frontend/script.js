@@ -5,9 +5,11 @@ const searchInput = document.getElementById("movieSearchInput");
 const searchBtn = document.getElementById("searchBtn");
 const searchLoader = document.getElementById("searchLoader");
 const searchError = document.getElementById("searchError");
+const navLogo = document.getElementById("navLogo");
 
 // Detail Card Elements
 const movieCard = document.getElementById("movieDetailsCard");
+const backToMoviesBtn = document.getElementById("backToMoviesBtn");
 const trendingSection = document.getElementById("trendingSection");
 const trendingGrid = document.getElementById("trendingGrid");
 
@@ -200,6 +202,25 @@ predictBtn.addEventListener("click", () => {
     const text = reviewInput.value.trim();
     if (text) predictSentiment(text);
 });
+
+// --- Backtracking Logic ---
+function returnToHome() {
+    movieCard.classList.add("hidden");
+    reviewSection.classList.add("hidden");
+    trendingSection.classList.remove("hidden");
+    searchInput.value = "";
+
+    // Default to trending view
+    document.querySelector("#trendingSection h3").innerHTML = '<span class="yellow-bar"></span> Trending Movies';
+    if (globalMoviesList.length > 0) {
+        renderMovieGrid(shuffleArray(globalMoviesList));
+    } else {
+        loadTrendingMovies();
+    }
+}
+
+backToMoviesBtn.addEventListener("click", returnToHome);
+navLogo.addEventListener("click", returnToHome);
 
 // Load default movies on startup
 document.addEventListener("DOMContentLoaded", loadTrendingMovies);

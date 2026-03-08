@@ -81,7 +81,7 @@
     <nav class="imdb-nav">
         <div class="nav-container">
             <!-- Logo -->
-            <div class="nav-brand">
+            <div class="nav-brand" id="navLogo" style="cursor: pointer;" title="Back to Home">
                 <span class="imdb-logo">MMDB</span>
             </div>
 
@@ -127,6 +127,14 @@
 
         <!-- Movie Details Card (Hidden by default) -->
         <section id="movieDetailsCard" class="movie-card hidden">
+
+            <!-- Back Button -->
+            <div style="margin-bottom: 1rem;">
+                <button id="backToMoviesBtn" class="imdb-btn"
+                    style="background: transparent; border: 1px solid var(--imdb-border); color: var(--text-primary); padding: 5px 15px; font-size: 0.9rem;">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Movies
+                </button>
+            </div>
 
             <!-- Hero Header (Title & Ratings Row) -->
             <div class="movie-header">
