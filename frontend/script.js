@@ -35,6 +35,7 @@ const closeSidebarBtn = document.getElementById("closeSidebarBtn");
 const sidebarMenu = document.getElementById("sidebarMenu");
 const sidebarOverlay = document.getElementById("sidebarOverlay");
 const navToPredictor = document.getElementById("navToPredictor");
+const navToTrending = document.getElementById("navToTrending");
 const navToTopRated = document.getElementById("navToTopRated");
 
 // --- Global Data Cache ---
@@ -59,6 +60,33 @@ closeSidebarBtn.addEventListener("click", closeSidebar);
 sidebarOverlay.addEventListener("click", closeSidebar);
 navToPredictor.addEventListener("click", closeSidebar);
 
+// Shuffle helper for trending
+function shuffleArray(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+navToTrending.addEventListener("click", (e) => {
+    e.preventDefault();
+    closeSidebar();
+
+    if (globalMoviesList.length > 0) {
+        movieCard.classList.add("hidden");
+        reviewSection.classList.add("hidden");
+        trendingSection.classList.remove("hidden");
+
+        document.querySelector("#trendingSection h3").innerHTML = '<span class="yellow-bar"></span> Trending Movies';
+
+        // Render randomized cache
+        const randomized = shuffleArray(globalMoviesList);
+        renderMovieGrid(randomized);
+    }
+});
+
 navToTopRated.addEventListener("click", (e) => {
     e.preventDefault();
     closeSidebar();
@@ -73,13 +101,14 @@ navToTopRated.addEventListener("click", (e) => {
         // Change section title
         document.querySelector("#trendingSection h3").innerHTML = '<span class="yellow-bar"></span> Top Rated Movies';
 
-        // Sort and Render
+        // Sort globally loaded movies
         const sortedMovies = [...globalMoviesList].sort((a, b) => {
             const ratingA = parseFloat(a.imdbRating) || 0;
             const ratingB = parseFloat(b.imdbRating) || 0;
             return ratingB - ratingA; // Descending
         });
 
+        // Re-use the exact same grid rendering function
         renderMovieGrid(sortedMovies);
     }
 });
@@ -122,6 +151,12 @@ async function loadTrendingMovies() {
         "Arrival", "Ex Machina", "Her", "Silver Linings Playbook", "La La Land", "Jojo Rabbit", "Knives Out", "Get Out", "A Quiet Place", "Hereditary",
         "The Conjuring", "IT", "Split", "Glass", "Unbreakable", "Rocky", "Creed", "The Terminator", "Terminator 2: Judgment Day", "Alien"
     ];
+
+    // Fisher-Yates Shuffle to randomize the array before loading
+    for (let i = defaultMovies.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [defaultMovies[i], defaultMovies[j]] = [defaultMovies[j], defaultMovies[i]];
+    }
 
     trendingGrid.innerHTML = "";
     // Process in batches of 10 to avoid blasting the API all at once and causing freezes
