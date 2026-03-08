@@ -35,8 +35,8 @@
                 <a href="#" class="sidebar-link"
                     onclick="alert('Feature coming soon: Model Weights & LIME Explanations')"><i
                         class="fa-solid fa-diagram-project"></i> Explainable AI</a>
-                <a href="#" class="sidebar-link" onclick="alert('Feature coming soon: Batch Processing')"><i
-                        class="fa-solid fa-file-csv"></i> Batch CSV Upload</a>
+                <a href="#" class="sidebar-link" id="navToCsvModal"><i class="fa-solid fa-file-csv"></i> Batch CSV
+                    Upload</a>
             </div>
 
             <div class="sidebar-section">
@@ -52,6 +52,27 @@
                 <a href="#" class="sidebar-link"><i class="fa-solid fa-moon"></i> Theme (Dark Mode)</a>
                 <a href="https://github.com/themayankguy/Movie-Prediction" target="_blank" class="sidebar-link"><i
                         class="fa-brands fa-github"></i> View Source Code</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Batch CSV Upload Modal -->
+    <div id="csvModalOverlay" class="sidebar-overlay">
+        <div class="csv-modal">
+            <div class="sidebar-header">
+                <h3>Batch Sentiment Analysis</h3>
+                <button id="closeCsvModalBtn" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="csv-modal-content">
+                <p>Upload a <code>.csv</code> file containing a column named <strong>"review"</strong>. The AI will
+                    process all reviews instantly and return a downloadable spreadsheet with predictions.</p>
+                <input type="file" id="csvFileInput" accept=".csv" class="imdb-input"
+                    style="margin-top: 1rem; padding: 10px;">
+                <button id="uploadCsvBtn" class="imdb-btn primary-btn" style="width: 100%; margin-top: 1rem;">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Analyze CSV
+                </button>
+                <div id="csvLoader" class="loader hidden" style="margin: 1rem auto;"></div>
+                <div id="csvError" class="error-msg hidden" style="margin-top: 1rem;"></div>
             </div>
         </div>
     </div>

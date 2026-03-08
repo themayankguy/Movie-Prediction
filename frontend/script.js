@@ -37,6 +37,15 @@ const sidebarOverlay = document.getElementById("sidebarOverlay");
 const navToPredictor = document.getElementById("navToPredictor");
 const navToTrending = document.getElementById("navToTrending");
 const navToTopRated = document.getElementById("navToTopRated");
+const navToCsvModal = document.getElementById("navToCsvModal");
+
+// CSV Modal Elements
+const csvModalOverlay = document.getElementById("csvModalOverlay");
+const closeCsvModalBtn = document.getElementById("closeCsvModalBtn");
+const csvFileInput = document.getElementById("csvFileInput");
+const uploadCsvBtn = document.getElementById("uploadCsvBtn");
+const csvLoader = document.getElementById("csvLoader");
+const csvError = document.getElementById("csvError");
 
 // --- Global Data Cache ---
 let globalMoviesList = [];
@@ -110,6 +119,68 @@ navToTopRated.addEventListener("click", (e) => {
 
         // Re-use the exact same grid rendering function
         renderMovieGrid(sortedMovies);
+    }
+});
+
+// --- CSV Modal Logic ---
+navToCsvModal.addEventListener("click", (e) => {
+    e.preventDefault();
+    closeSidebar();
+    csvModalOverlay.classList.add("active");
+});
+
+closeCsvModalBtn.addEventListener("click", () => {
+    csvModalOverlay.classList.remove("active");
+    csvError.classList.add("hidden");
+});
+
+uploadCsvBtn.addEventListener("click", async () => {
+    const file = csvFileInput.files[0];
+    if (!file) {
+        csvError.textContent = "Please select a .csv file first.";
+        csvError.classList.remove("hidden");
+        return;
+    }
+
+    csvError.classList.add("hidden");
+    csvLoader.classList.remove("hidden");
+    uploadCsvBtn.disabled = true;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/batch_predict`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.detail || "Error processing CSV.");
+        }
+
+        // Trigger file download
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `analyzed_${file.name}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+
+        // Close modal on success
+        csvModalOverlay.classList.remove("active");
+
+    } catch (e) {
+        csvError.textContent = e.message;
+        csvError.classList.remove("hidden");
+    } finally {
+        csvLoader.classList.add("hidden");
+        uploadCsvBtn.disabled = false;
+        csvFileInput.value = ""; // Reset input
     }
 });
 

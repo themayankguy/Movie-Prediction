@@ -225,6 +225,31 @@ body {
     padding-left: 5px;
 }
 
+/* --- Modals --- */
+.csv-modal {
+    background-color: var(--imdb-dark-gray);
+    width: 90%;
+    max-width: 500px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    border: 1px solid var(--imdb-border);
+}
+
+.csv-modal-content {
+    padding: 2rem;
+    text-align: center;
+}
+
+.csv-modal-content p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
 /* --- Loader & Errors --- */
 .loader {
     width: 30px;
