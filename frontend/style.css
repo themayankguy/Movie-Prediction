@@ -250,6 +250,57 @@ body {
     line-height: 1.5;
 }
 
+/* --- Trailer Modal --- */
+.trailer-modal {
+    background-color: var(--imdb-black);
+    width: 90%;
+    max-width: 900px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
+    border: 1px solid var(--imdb-border);
+    overflow: hidden;
+}
+
+.video-container {
+    position: relative;
+    padding-bottom: 56.25%;
+    /* 16:9 Aspect Ratio */
+    height: 0;
+    overflow: hidden;
+}
+
+.video-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* --- Buttons --- */
+.imdb-btn {
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    border-radius: 4px;
+}
+
+.primary-btn {
+    background-color: var(--imdb-yellow);
+    color: var(--imdb-black);
+    border: none;
+    padding: 0.8rem 1.5rem;
+}
+
+.primary-btn:hover {
+    background-color: #d4a912;
+}
+
 /* --- Loader & Errors --- */
 .loader {
     width: 30px;
@@ -618,6 +669,65 @@ textarea:focus {
 
 .status-negative .meter-fill {
     background-color: #ff4545;
+}
+
+.impact-container {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--imdb-border);
+    animation: fadeIn 0.8s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- Genre Filter Bar --- */
+.genre-filter-bar {
+    display: flex;
+    gap: 0.8rem;
+    overflow-x: auto;
+    padding: 1rem 0;
+    margin-bottom: 0.5rem;
+    scrollbar-width: none;
+    /* Hide scrollbar for clean look */
+}
+
+.genre-filter-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.genre-pill {
+    background: none;
+    border: 1px solid var(--imdb-border);
+    color: var(--text-primary);
+    padding: 0.5rem 1.2rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.genre-pill:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--text-muted);
+}
+
+.genre-pill.active {
+    background-color: var(--imdb-yellow);
+    border-color: var(--imdb-yellow);
+    color: var(--imdb-black);
+    font-weight: 600;
 }
 
 /* --- Trending Movies Grid --- */

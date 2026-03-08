@@ -49,6 +49,28 @@ const uploadCsvBtn = document.getElementById("uploadCsvBtn");
 const csvLoader = document.getElementById("csvLoader");
 const csvError = document.getElementById("csvError");
 
+// Stats Modal Elements
+const statsModalOverlay = document.getElementById("statsModalOverlay");
+const navToStatsModal = document.getElementById("navToStatsModal");
+const closeStatsModalBtn = document.getElementById("closeStatsModalBtn");
+
+// Trailer Elements
+const watchTrailerBtn = document.getElementById("watchTrailerBtn");
+const trailerModalOverlay = document.getElementById("trailerModalOverlay");
+const closeTrailerBtn = document.getElementById("closeTrailerBtn");
+const trailerFrame = document.getElementById("trailerFrame");
+const trailerMovieTitle = document.getElementById("trailerMovieTitle");
+const externalTrailerLink = document.getElementById("externalTrailerLink");
+
+// Chart Objects
+let impactChart = null;
+let probDoughnutChart = null;
+let topPositiveChart = null;
+let topNegativeChart = null;
+
+// Genre Filter Elements
+const genrePills = document.querySelectorAll(".genre-pill");
+
 // --- Global Data Cache ---
 let globalMoviesList = [];
 
@@ -124,6 +146,32 @@ navToTopRated.addEventListener("click", (e) => {
     }
 });
 
+// --- Genre Filter Logic ---
+genrePills.forEach(pill => {
+    pill.addEventListener("click", () => {
+        // Update UI state
+        genrePills.forEach(p => p.classList.remove("active"));
+        pill.classList.add("active");
+
+        const selectedGenre = pill.getAttribute("data-genre");
+        filterMoviesByGenre(selectedGenre);
+    });
+});
+
+function filterMoviesByGenre(genre) {
+    if (genre === "All") {
+        renderMovieGrid(globalMoviesList);
+        return;
+    }
+
+    const filtered = globalMoviesList.filter(movie => {
+        if (!movie.Genre) return false;
+        return movie.Genre.toLowerCase().includes(genre.toLowerCase());
+    });
+
+    renderMovieGrid(filtered);
+}
+
 // --- CSV Modal Logic ---
 navToCsvModal.addEventListener("click", (e) => {
     e.preventDefault();
@@ -186,6 +234,90 @@ uploadCsvBtn.addEventListener("click", async () => {
     }
 });
 
+// --- Stats Modal Logic ---
+navToStatsModal.addEventListener("click", async (e) => {
+    e.preventDefault();
+    closeSidebar();
+    statsModalOverlay.classList.add("active");
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/model_stats`);
+        const data = await response.json();
+        renderGlobalStatsCharts(data);
+    } catch (err) {
+        console.error("Failed to load global stats", err);
+    }
+});
+
+closeStatsModalBtn.addEventListener("click", () => {
+    statsModalOverlay.classList.remove("active");
+});
+
+function renderGlobalStatsCharts(data) {
+    const posCtx = document.getElementById('topPositiveChart').getContext('2d');
+    const negCtx = document.getElementById('topNegativeChart').getContext('2d');
+
+    if (topPositiveChart) topPositiveChart.destroy();
+    if (topNegativeChart) topNegativeChart.destroy();
+
+    topPositiveChart = createBarChart(posCtx, data.top_positive, 'rgba(87, 227, 44, 0.6)', '#57e32c');
+    topNegativeChart = createBarChart(negCtx, data.top_negative, 'rgba(255, 69, 69, 0.6)', '#ff4545');
+}
+
+function createBarChart(ctx, dataset, bgColor, borderColor) {
+    return new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: dataset.map(d => d.word),
+            datasets: [{
+                data: dataset.map(d => d.weight),
+                backgroundColor: bgColor,
+                borderColor: borderColor,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.5)' } },
+                y: { ticks: { color: '#fff' } }
+            }
+        }
+    });
+}
+
+// --- Trailer Logic ---
+watchTrailerBtn.addEventListener("click", () => {
+    const title = movieTitle.textContent;
+    const year = movieYear.textContent;
+
+    // Construct search-based YouTube embed URL
+    const searchQuery = encodeURIComponent(`${title} ${year} official trailer`);
+
+    // We'll also provide a direct link for fallback because studios often block embedding official trailers
+    const directSearchUrl = `https://www.youtube.com/results?search_query=${searchQuery}`;
+    const embedUrl = `https://www.youtube.com/embed?listType=search&list=${searchQuery}`;
+
+    trailerFrame.src = embedUrl;
+    externalTrailerLink.href = directSearchUrl;
+
+    trailerMovieTitle.textContent = `${title} Trailer`;
+    trailerModalOverlay.classList.add("active");
+});
+
+function closeTrailer() {
+    trailerModalOverlay.classList.remove("active");
+    trailerFrame.src = ""; // Stop the video
+}
+
+closeTrailerBtn.addEventListener("click", closeTrailer);
+trailerModalOverlay.addEventListener("click", (e) => {
+    if (e.target === trailerModalOverlay) closeTrailer();
+});
+
 searchBtn.addEventListener("click", () => {
     const title = searchInput.value.trim();
     if (title) fetchMovieData(title);
@@ -208,7 +340,16 @@ function returnToHome() {
     movieCard.classList.add("hidden");
     reviewSection.classList.add("hidden");
     trendingSection.classList.remove("hidden");
+    resultContainer.classList.add("hidden");
+    document.getElementById("impactContainer").classList.add("hidden");
     searchInput.value = "";
+    reviewInput.value = "";
+
+    // Clear chart if it exists
+    if (impactChart) {
+        impactChart.destroy();
+        impactChart = null;
+    }
 
     // Default to trending view
     document.querySelector("#trendingSection h3").innerHTML = '<span class="yellow-bar"></span> Trending Movies';
@@ -383,7 +524,7 @@ async function predictSentiment(text) {
         if (!response.ok) throw new Error("Failed to predict sentiment.");
 
         const data = await response.json();
-        updateResultUI(data.sentiment, data.confidence);
+        updateResultUI(data.sentiment, data.confidence, data.word_impacts);
 
     } catch (error) {
         alert("Error: " + error.message);
@@ -393,12 +534,13 @@ async function predictSentiment(text) {
     }
 }
 
-function updateResultUI(sentiment, confidence) {
+function updateResultUI(sentiment, confidence, wordImpacts) {
     resultContainer.className = "result-container"; // reset
 
     const label = document.getElementById("sentimentLabel");
     const icon = document.getElementById("sentimentIcon");
     const fill = document.getElementById("meterFill");
+    const impactContainer = document.getElementById("impactContainer");
 
     document.getElementById("confidenceValue").textContent = `${confidence}%`;
 
@@ -415,4 +557,102 @@ function updateResultUI(sentiment, confidence) {
     }
 
     resultContainer.classList.remove("hidden");
+
+    // Render the Impact Chart
+    if (wordImpacts && wordImpacts.length > 0) {
+        renderImpactChart(wordImpacts);
+        impactContainer.classList.remove("hidden");
+    } else {
+        impactContainer.classList.add("hidden");
+    }
+
+    // Render the Probability Doughnut
+    const probPositive = confidence / 100;
+    const probNegative = 1 - probPositive;
+    renderProbDoughnut(probPositive, probNegative);
+}
+
+function renderProbDoughnut(pos, neg) {
+    const ctx = document.getElementById('probDoughnutChart').getContext('2d');
+    if (probDoughnutChart) probDoughnutChart.destroy();
+
+    probDoughnutChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Positive', 'Negative'],
+            datasets: [{
+                data: [pos, neg],
+                backgroundColor: ['#57e32c', '#ff4545'],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            cutout: '70%',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return `${context.label}: ${(context.raw * 100).toFixed(1)}%`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderImpactChart(wordImpacts) {
+    const ctx = document.getElementById('impactChart').getContext('2d');
+
+    // Destroy previous instance
+    if (impactChart) impactChart.destroy();
+
+    // Process Data
+    const labels = wordImpacts.map(item => item.word);
+    const dataValues = wordImpacts.map(item => item.weight);
+    const backgroundColors = dataValues.map(v => v > 0 ? 'rgba(87, 227, 44, 0.6)' : 'rgba(255, 69, 69, 0.6)');
+    const borderColors = dataValues.map(v => v > 0 ? '#57e32c' : '#ff4545');
+
+    impactChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Model Weight',
+                data: dataValues,
+                backgroundColor: backgroundColors,
+                borderColor: borderColors,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y', // Horizontal bars
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { color: 'rgba(255,255,255,0.6)' }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { color: '#fff', font: { weight: 'bold' } }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1a1a1a',
+                    titleColor: '#fff',
+                    bodyColor: '#ccc',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1
+                }
+            }
+        }
+    });
 }

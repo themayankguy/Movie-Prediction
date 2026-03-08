@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MMDB: Ratings, Reviews, and Where to Watch</title>
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon.png?v=2">
+    <link rel="shortcut icon" href="favicon.png?v=2">
+
     <!-- Google Fonts: Roboto is closest to IMDb's modern font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,6 +20,9 @@
 
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Chart.js for Data Visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -31,10 +38,9 @@
             <div class="sidebar-section">
                 <h3>Machine Learning</h3>
                 <a href="#reviewSection" class="sidebar-link" id="navToPredictor"><i class="fa-solid fa-brain"></i>
-                    Sentiment Predictor</a>
-                <a href="#" class="sidebar-link"
-                    onclick="alert('Feature coming soon: Model Weights & LIME Explanations')"><i
-                        class="fa-solid fa-diagram-project"></i> Explainable AI</a>
+                    Predictor & Explainability</a>
+                <a href="#" class="sidebar-link" id="navToStatsModal"><i class="fa-solid fa-chart-pie"></i> Global Model
+                    Data</a>
                 <a href="#" class="sidebar-link" id="navToCsvModal"><i class="fa-solid fa-file-csv"></i> Batch CSV
                     Upload</a>
             </div>
@@ -52,6 +58,54 @@
                 <a href="#" class="sidebar-link"><i class="fa-solid fa-moon"></i> Theme (Dark Mode)</a>
                 <a href="https://github.com/themayankguy/Movie-Prediction" target="_blank" class="sidebar-link"><i
                         class="fa-brands fa-github"></i> View Source Code</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Stats Modal -->
+    <div id="statsModalOverlay" class="sidebar-overlay">
+        <div class="csv-modal" style="max-width: 800px; width: 95%;">
+            <div class="sidebar-header">
+                <h3>Global Model Insights</h3>
+                <button id="closeStatsModalBtn" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="csv-modal-content" style="text-align: left;">
+                <p style="margin-bottom: 2rem;">This data reveals what the model learned during training on 50,000 IMDb
+                    reviews. These are the words that carry the most weight globally across all predictions.</p>
+
+                <div class="stats-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div>
+                        <h4 style="color: #57e32c; margin-bottom: 1rem;"><i class="fa-solid fa-plus-circle"></i> Top
+                            Positive Drivers</h4>
+                        <div style="height: 300px;"><canvas id="topPositiveChart"></canvas></div>
+                    </div>
+                    <div>
+                        <h4 style="color: #ff4545; margin-bottom: 1rem;"><i class="fa-solid fa-minus-circle"></i> Top
+                            Negative Drivers</h4>
+                        <div style="height: 300px;"><canvas id="topNegativeChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- YouTube Trailer Modal -->
+    <div id="trailerModalOverlay" class="sidebar-overlay">
+        <div class="trailer-modal">
+            <div class="sidebar-header">
+                <h3 id="trailerMovieTitle">Movie Trailer</h3>
+                <button id="closeTrailerBtn" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="video-container">
+                <iframe id="trailerFrame" src="" frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen></iframe>
+            </div>
+            <div style="padding: 1rem; text-align: center; background: #1a1a1a;">
+                <a id="externalTrailerLink" href="#" target="_blank" class="text-blue"
+                    style="font-size: 0.9rem; text-decoration: none;">
+                    <i class="fa-brands fa-youtube"></i> Video not loading? Watch directly on YouTube
+                </a>
             </div>
         </div>
     </div>
@@ -120,6 +174,18 @@
                         class="fa-solid fa-chevron-right"></i></span>
             </div>
 
+            <div class="genre-filter-bar" id="genreFilterBar">
+                <button class="genre-pill active" data-genre="All">All</button>
+                <button class="genre-pill" data-genre="Action">Action</button>
+                <button class="genre-pill" data-genre="Adventure">Adventure</button>
+                <button class="genre-pill" data-genre="Comedy">Comedy</button>
+                <button class="genre-pill" data-genre="Drama">Drama</button>
+                <button class="genre-pill" data-genre="Horror">Horror</button>
+                <button class="genre-pill" data-genre="Sci-Fi">Sci-Fi</button>
+                <button class="genre-pill" data-genre="Thriller">Thriller</button>
+                <button class="genre-pill" data-genre="Crime">Crime</button>
+            </div>
+
             <div class="movie-grid" id="trendingGrid">
                 <!-- Populated via JS -->
             </div>
@@ -176,6 +242,11 @@
                         <!-- Populated via JS -->
                     </div>
 
+                    <button id="watchTrailerBtn" class="imdb-btn primary-btn"
+                        style="margin-top: 1rem; margin-bottom: 1rem;">
+                        <i class="fa-solid fa-play"></i> Watch Trailer
+                    </button>
+
                     <p id="moviePlot" class="plot-text">This is the plot of the movie.</p>
 
                     <div class="credit-row">
@@ -215,17 +286,37 @@
                 </div>
 
                 <!-- Results Area -->
-                <div id="resultContainer" class="result-container hidden">
+                <div id="resultContainer" class="result-container hidden" style="flex-wrap: wrap; gap: 1.5rem;">
                     <div class="result-score-box">
-                        <i id="sentimentIcon" class="fa-solid fa-star"></i>
+                        <i id="sentimentIcon" class="fa-solid fa-face-smile"></i>
                         <span id="sentimentLabel">Positive</span>
                     </div>
-                    <div class="confidence-details">
-                        <p><strong>Confidence Score:</strong> <span id="confidenceValue">95.4%</span></p>
+
+                    <div class="confidence-details" style="min-width: 200px;">
+                        <p><strong>Model Confidence:</strong> <span id="confidenceValue">95.4%</span></p>
                         <div class="meter-track">
                             <div id="meterFill" class="meter-fill" style="width: 0%;"></div>
                         </div>
                     </div>
+
+                    <!-- New Probability Breakdown Chart -->
+                    <div style="width: 120px; height: 120px; margin-left: auto;">
+                        <canvas id="probDoughnutChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Word Impact Visualization -->
+                <div id="impactContainer" class="impact-container hidden">
+                    <h5
+                        style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem; letter-spacing: 0.5px;">
+                        WORD IMPACT ANALYSIS</h5>
+                    <div style="height: 250px; width: 100%;">
+                        <canvas id="impactChart"></canvas>
+                    </div>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem; text-align: center;">
+                        <i class="fa-solid fa-circle-info"></i> Bars show how much each word influenced the model's
+                        decision.
+                    </p>
                 </div>
             </div>
         </section>
