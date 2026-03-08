@@ -20,6 +20,42 @@
 
 <body>
 
+    <!-- Sidebar Menu Overlay -->
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+    <div id="sidebarMenu" class="sidebar-menu">
+        <div class="sidebar-header">
+            <span class="imdb-logo">MMDB</span>
+            <button id="closeSidebarBtn" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="sidebar-content">
+            <div class="sidebar-section">
+                <h3>Machine Learning</h3>
+                <a href="#reviewSection" class="sidebar-link" id="navToPredictor"><i class="fa-solid fa-brain"></i>
+                    Sentiment Predictor</a>
+                <a href="#" class="sidebar-link"
+                    onclick="alert('Feature coming soon: Model Weights & LIME Explanations')"><i
+                        class="fa-solid fa-diagram-project"></i> Explainable AI</a>
+                <a href="#" class="sidebar-link" onclick="alert('Feature coming soon: Batch Processing')"><i
+                        class="fa-solid fa-file-csv"></i> Batch CSV Upload</a>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Movies</h3>
+                <a href="#" class="sidebar-link" id="navToTrending"><i class="fa-solid fa-bolt"></i> Trending Movies</a>
+                <a href="#" class="sidebar-link" id="navToTopRated"><i class="fa-solid fa-fire"></i> Top Rated
+                    Movies</a>
+                <a href="#" class="sidebar-link"><i class="fa-solid fa-ticket"></i> In Theaters</a>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Settings</h3>
+                <a href="#" class="sidebar-link"><i class="fa-solid fa-moon"></i> Theme (Dark Mode)</a>
+                <a href="https://github.com/themayankguy/Movie-Prediction" target="_blank" class="sidebar-link"><i
+                        class="fa-brands fa-github"></i> View Source Code</a>
+            </div>
+        </div>
+    </div>
+
     <!-- IMDb Style Navigation Bar -->
     <nav class="imdb-nav">
         <div class="nav-container">
@@ -29,7 +65,7 @@
             </div>
 
             <!-- Menu Button -->
-            <button class="menu-btn">
+            <button id="openSidebarBtn" class="menu-btn">
                 <i class="fa-solid fa-bars"></i> Menu
             </button>
 

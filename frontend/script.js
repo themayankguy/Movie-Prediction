@@ -29,7 +29,89 @@ const predictBtn = document.getElementById("predictBtn");
 const resultContainer = document.getElementById("resultContainer");
 const reviewSection = document.getElementById("reviewSection");
 
+// Sidebar Elements
+const openSidebarBtn = document.getElementById("openSidebarBtn");
+const closeSidebarBtn = document.getElementById("closeSidebarBtn");
+const sidebarMenu = document.getElementById("sidebarMenu");
+const sidebarOverlay = document.getElementById("sidebarOverlay");
+const navToPredictor = document.getElementById("navToPredictor");
+const navToTrending = document.getElementById("navToTrending");
+const navToTopRated = document.getElementById("navToTopRated");
+
+// --- Global Data Cache ---
+let globalMoviesList = [];
+
 // --- Event Listeners ---
+
+// Sidebar Toggle Logic
+openSidebarBtn.addEventListener("click", () => {
+    sidebarMenu.classList.add("active");
+    sidebarOverlay.classList.add("active");
+    document.body.style.overflow = "hidden"; // Prevent background scrolling
+});
+
+function closeSidebar() {
+    sidebarMenu.classList.remove("active");
+    sidebarOverlay.classList.remove("active");
+    document.body.style.overflow = "auto";
+}
+
+closeSidebarBtn.addEventListener("click", closeSidebar);
+sidebarOverlay.addEventListener("click", closeSidebar);
+navToPredictor.addEventListener("click", closeSidebar);
+
+// Shuffle helper for trending
+function shuffleArray(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+navToTrending.addEventListener("click", (e) => {
+    e.preventDefault();
+    closeSidebar();
+
+    if (globalMoviesList.length > 0) {
+        movieCard.classList.add("hidden");
+        reviewSection.classList.add("hidden");
+        trendingSection.classList.remove("hidden");
+
+        document.querySelector("#trendingSection h3").innerHTML = '<span class="yellow-bar"></span> Trending Movies';
+
+        // Render randomized cache
+        const randomized = shuffleArray(globalMoviesList);
+        renderMovieGrid(randomized);
+    }
+});
+
+navToTopRated.addEventListener("click", (e) => {
+    e.preventDefault();
+    closeSidebar();
+
+    // Sort global library by rating
+    if (globalMoviesList.length > 0) {
+        // Show trending section, hide details
+        movieCard.classList.add("hidden");
+        reviewSection.classList.add("hidden");
+        trendingSection.classList.remove("hidden");
+
+        // Change section title
+        document.querySelector("#trendingSection h3").innerHTML = '<span class="yellow-bar"></span> Top Rated Movies';
+
+        // Sort globally loaded movies
+        const sortedMovies = [...globalMoviesList].sort((a, b) => {
+            const ratingA = parseFloat(a.imdbRating) || 0;
+            const ratingB = parseFloat(b.imdbRating) || 0;
+            return ratingB - ratingA; // Descending
+        });
+
+        // Re-use the exact same grid rendering function
+        renderMovieGrid(sortedMovies);
+    }
+});
 
 searchBtn.addEventListener("click", () => {
     const title = searchInput.value.trim();
@@ -70,8 +152,13 @@ async function loadTrendingMovies() {
         "The Conjuring", "IT", "Split", "Glass", "Unbreakable", "Rocky", "Creed", "The Terminator", "Terminator 2: Judgment Day", "Alien"
     ];
 
-    trendingGrid.innerHTML = "";
+    // Fisher-Yates Shuffle to randomize the array before loading
+    for (let i = defaultMovies.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [defaultMovies[i], defaultMovies[j]] = [defaultMovies[j], defaultMovies[i]];
+    }
 
+    trendingGrid.innerHTML = "";
     // Process in batches of 10 to avoid blasting the API all at once and causing freezes
     const BATCH_SIZE = 10;
 
@@ -85,37 +172,52 @@ async function loadTrendingMovies() {
 
             const movies = await Promise.all(promises);
 
-            movies.forEach(data => {
-                if (data.Response === "True") {
-                    const card = document.createElement("div");
-                    card.className = "grid-item";
-
-                    const posterStr = data.Poster !== "N/A" ? data.Poster : "https://via.placeholder.com/300x450?text=No+Poster";
-
-                    card.innerHTML = `
-                        <img class="grid-poster" src="${posterStr}" alt="${data.Title}">
-                        <div class="grid-info">
-                            <div class="grid-title" title="${data.Title}">${data.Title}</div>
-                            <div class="grid-rating">
-                                <i class="fa-solid fa-star"></i> ${data.imdbRating}
-                            </div>
-                        </div>
-                    `;
-
-                    card.addEventListener("click", () => {
-                        searchInput.value = data.Title;
-                        fetchMovieData(data.Title);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    });
-
-                    trendingGrid.appendChild(card);
+            // Add valid movies to our global cache
+            movies.forEach(m => {
+                if (m.Response === "True") {
+                    // Check for duplicates just in case
+                    if (!globalMoviesList.find(existing => existing.imdbID === m.imdbID)) {
+                        globalMoviesList.push(m);
+                    }
                 }
             });
+
+            // Re-render the grid as we load
+            renderMovieGrid(globalMoviesList);
 
         } catch (e) {
             console.error("Failed to load a batch of trending movies", e);
         }
     }
+}
+
+function renderMovieGrid(moviesArray) {
+    trendingGrid.innerHTML = "";
+
+    moviesArray.forEach(data => {
+        const card = document.createElement("div");
+        card.className = "grid-item";
+
+        const posterStr = data.Poster !== "N/A" ? data.Poster : "https://via.placeholder.com/300x450?text=No+Poster";
+
+        card.innerHTML = `
+            <img class="grid-poster" src="${posterStr}" alt="${data.Title}">
+            <div class="grid-info">
+                <div class="grid-title" title="${data.Title}">${data.Title}</div>
+                <div class="grid-rating">
+                    <i class="fa-solid fa-star"></i> ${data.imdbRating}
+                </div>
+            </div>
+        `;
+
+        card.addEventListener("click", () => {
+            searchInput.value = data.Title;
+            fetchMovieData(data.Title);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        trendingGrid.appendChild(card);
+    });
 }
 
 async function fetchMovieData(title) {
