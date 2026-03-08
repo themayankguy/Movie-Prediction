@@ -29,7 +29,31 @@ const predictBtn = document.getElementById("predictBtn");
 const resultContainer = document.getElementById("resultContainer");
 const reviewSection = document.getElementById("reviewSection");
 
+// Sidebar Elements
+const openSidebarBtn = document.getElementById("openSidebarBtn");
+const closeSidebarBtn = document.getElementById("closeSidebarBtn");
+const sidebarMenu = document.getElementById("sidebarMenu");
+const sidebarOverlay = document.getElementById("sidebarOverlay");
+const navToPredictor = document.getElementById("navToPredictor");
+
 // --- Event Listeners ---
+
+// Sidebar Toggle Logic
+openSidebarBtn.addEventListener("click", () => {
+    sidebarMenu.classList.add("active");
+    sidebarOverlay.classList.add("active");
+    document.body.style.overflow = "hidden"; // Prevent background scrolling
+});
+
+function closeSidebar() {
+    sidebarMenu.classList.remove("active");
+    sidebarOverlay.classList.remove("active");
+    document.body.style.overflow = "auto";
+}
+
+closeSidebarBtn.addEventListener("click", closeSidebar);
+sidebarOverlay.addEventListener("click", closeSidebar);
+navToPredictor.addEventListener("click", closeSidebar);
 
 searchBtn.addEventListener("click", () => {
     const title = searchInput.value.trim();
