@@ -43,17 +43,67 @@ async def predict_sentiment(request: ReviewRequest):
     if not request.text.strip():
         raise HTTPException(status_code=400, detail="Review text cannot be empty.")
     
-    # Vectorize and predict
-    vec = vectorizer.transform([request.text])
-    prob = model.predict_proba(vec)[0][1]
-    
-    sentiment = "Positive" if prob > 0.5 else "Negative"
-    
-    return {
-        "sentiment": sentiment,
-        "confidence": round(prob * 100, 2),
-        "probability_score": float(prob)
-    }
+    try:
+        # Vectorize and Predict
+        vec = vectorizer.transform([request.text])
+        prob = model.predict_proba(vec)[0][1] # Probability of "Positive"
+        sentiment = "Positive" if prob > 0.5 else "Negative"
+        
+        # --- Explainable AI: Extract Word Impacts ---
+        feature_names = vectorizer.get_feature_names_out()
+        coefs = model.coef_[0]
+        
+        # Find indices of words present in this specific text
+        feature_indices = vec.indices
+        word_impacts = []
+        
+        for idx in feature_indices:
+            word = feature_names[idx]
+            weight = coefs[idx]
+            word_impacts.append({
+                "word": word,
+                "weight": round(float(weight), 4)
+            })
+            
+        # Sort by absolute impact (importance) and take top 8
+        word_impacts = sorted(word_impacts, key=lambda x: abs(x['weight']), reverse=True)[:8]
+        
+        return {
+            "sentiment": sentiment,
+            "confidence": round(prob * 100, 2),
+            "probability_score": float(prob),
+            "word_impacts": word_impacts
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- DASHBOARD ENDPOINTS ---
+
+@app.get("/model_stats")
+def get_model_stats():
+    """Returns global model statistics and top impactful words globally."""
+    try:
+        feature_names = vectorizer.get_feature_names_out()
+        coefs = model.coef_[0]
+        
+        # Combine into pairs and sort
+        pairs = list(zip(feature_names, coefs))
+        
+        # Top 10 Positive
+        top_positive = sorted(pairs, key=lambda x: x[1], reverse=True)[:10]
+        top_positive = [{"word": p[0], "weight": round(float(p[1]), 4)} for p in top_positive]
+        
+        # Top 10 Negative
+        top_negative = sorted(pairs, key=lambda x: x[1])[:10]
+        top_negative = [{"word": p[0], "weight": round(float(p[1]), 4)} for p in top_negative]
+        
+        return {
+            "top_positive": top_positive,
+            "top_negative": top_negative,
+            "training_dist": {"Positive": 25000, "Negative": 25000} # Placeholder for IMDB dataset
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/batch_predict")
 async def batch_predict(file: UploadFile = File(...)):
