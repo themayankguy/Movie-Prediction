@@ -24,6 +24,7 @@ const genreTags = document.getElementById("movieGenreTags");
 const reviewInput = document.getElementById("reviewInput");
 const predictBtn = document.getElementById("predictBtn");
 const resultContainer = document.getElementById("resultContainer");
+const reviewSection = document.getElementById("reviewSection");
 
 // --- Event Listeners ---
 
@@ -90,10 +91,12 @@ async function fetchMovieData(title) {
         }
 
         movieCard.classList.remove("hidden");
+        reviewSection.classList.remove("hidden"); // Reveal review box
 
     } catch (error) {
         searchError.textContent = error.message;
         searchError.classList.remove("hidden");
+        reviewSection.classList.add("hidden"); // Hide on error
     } finally {
         searchLoader.classList.add("hidden");
     }
