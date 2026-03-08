@@ -55,46 +55,66 @@ document.addEventListener("DOMContentLoaded", loadTrendingMovies);
 
 async function loadTrendingMovies() {
     trendingGrid.innerHTML = '<div class="loader"></div>';
-    const defaultMovies = ["Inception", "The Dark Knight", "Oppenheimer", "Interstellar", "The Matrix", "Pulp Fiction"];
 
-    try {
-        const promises = defaultMovies.map(title =>
-            fetch(`${API_BASE_URL}/movie/${encodeURIComponent(title)}`).then(res => res.json())
-        );
-        const movies = await Promise.all(promises);
+    // A curated list of 100 solid movie titles
+    const defaultMovies = [
+        "The Shawshank Redemption", "The Godfather", "The Dark Knight", "Pulp Fiction", "Forrest Gump", "Inception", "Fight Club", "The Matrix", "Goodfellas", "The Empire Strikes Back",
+        "Interstellar", "City of God", "Spirited Away", "Saving Private Ryan", "The Green Mile", "Parasite", "Leon: The Professional", "Gladiator", "The Lion King", "The Prestige",
+        "The Departed", "Whiplash", "The Usual Suspects", "Se7en", "Django Unchained", "The Shining", "WALL-E", "Avengers: Infinity War", "Spider-Man: Into the Spider-Verse", "Joker",
+        "Braveheart", "Toy Story", "Inglourious Basterds", "Good Will Hunting", "Requiem for a Dream", "2001: A Space Odyssey", "Toy Story 3", "Star Wars", "Reservoir Dogs", "Up",
+        "Jurassic Park", "Die Hard", "Batman Begins", "Truman Show", "Shutter Island", "The Sixth Sense", "A Beautiful Mind", "Jurassic Park", "Finding Nemo", "Kill Bill: Vol. 1",
+        "V for Vendetta", "No Country for Old Men", "Avatar", "Catch Me If You Can", "The Big Lebowski", "The Wolf of Wall Street", "Blade Runner 2049", "The Grand Budapest Hotel", "Mad Max: Fury Road", "Gone Girl",
+        "Prisoners", "The Social Network", "12 Years a Slave", "Hacksaw Ridge", "Ford v Ferrari", "Logan", "Dune", "Everything Everywhere All at Once", "Oppenheimer", "Barbie",
+        "Top Gun: Maverick", "The Batman", "John Wick", "Deadpool", "Guardians of the Galaxy", "Iron Man", "Black Panther", "Thor: Ragnarok", "Avengers: Endgame", "Dunkirk",
+        "Arrival", "Ex Machina", "Her", "Silver Linings Playbook", "La La Land", "Jojo Rabbit", "Knives Out", "Get Out", "A Quiet Place", "Hereditary",
+        "The Conjuring", "IT", "Split", "Glass", "Unbreakable", "Rocky", "Creed", "The Terminator", "Terminator 2: Judgment Day", "Alien"
+    ];
 
-        trendingGrid.innerHTML = "";
+    trendingGrid.innerHTML = "";
 
-        movies.forEach(data => {
-            if (data.Response === "True") {
-                const card = document.createElement("div");
-                card.className = "grid-item";
+    // Process in batches of 10 to avoid blasting the API all at once and causing freezes
+    const BATCH_SIZE = 10;
 
-                const posterStr = data.Poster !== "N/A" ? data.Poster : "https://via.placeholder.com/300x450?text=No+Poster";
+    for (let i = 0; i < defaultMovies.length; i += BATCH_SIZE) {
+        const batch = defaultMovies.slice(i, i + BATCH_SIZE);
 
-                card.innerHTML = `
-                    <img class="grid-poster" src="${posterStr}" alt="${data.Title}">
-                    <div class="grid-info">
-                        <div class="grid-title" title="${data.Title}">${data.Title}</div>
-                        <div class="grid-rating">
-                            <i class="fa-solid fa-star"></i> ${data.imdbRating}
+        try {
+            const promises = batch.map(title =>
+                fetch(`${API_BASE_URL}/movie/${encodeURIComponent(title)}`).then(res => res.json())
+            );
+
+            const movies = await Promise.all(promises);
+
+            movies.forEach(data => {
+                if (data.Response === "True") {
+                    const card = document.createElement("div");
+                    card.className = "grid-item";
+
+                    const posterStr = data.Poster !== "N/A" ? data.Poster : "https://via.placeholder.com/300x450?text=No+Poster";
+
+                    card.innerHTML = `
+                        <img class="grid-poster" src="${posterStr}" alt="${data.Title}">
+                        <div class="grid-info">
+                            <div class="grid-title" title="${data.Title}">${data.Title}</div>
+                            <div class="grid-rating">
+                                <i class="fa-solid fa-star"></i> ${data.imdbRating}
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
 
-                card.addEventListener("click", () => {
-                    searchInput.value = data.Title;
-                    fetchMovieData(data.Title);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                });
+                    card.addEventListener("click", () => {
+                        searchInput.value = data.Title;
+                        fetchMovieData(data.Title);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
 
-                trendingGrid.appendChild(card);
-            }
-        });
+                    trendingGrid.appendChild(card);
+                }
+            });
 
-    } catch (e) {
-        console.error("Failed to load trending movies", e);
-        trendingGrid.innerHTML = "<p>Couldn't load popular movies right now.</p>";
+        } catch (e) {
+            console.error("Failed to load a batch of trending movies", e);
+        }
     }
 }
 
