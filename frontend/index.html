@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MMDB: Ratings, Reviews, and Where to Watch</title>
+
+    <!-- Google Fonts: Roboto is closest to IMDb's modern font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- IMDb Style Navigation Bar -->
+    <nav class="imdb-nav">
+        <div class="nav-container">
+            <!-- Logo -->
+            <div class="nav-brand">
+                <span class="imdb-logo">MMDB</span>
+            </div>
+
+            <!-- Menu Button -->
+            <button class="menu-btn">
+                <i class="fa-solid fa-bars"></i> Menu
+            </button>
+
+            <!-- Search Bar (Now in the Nav like IMDb) -->
+            <div class="nav-search">
+                <div class="search-category">
+                    All <i class="fa-solid fa-caret-down"></i>
+                </div>
+                <input type="text" id="movieSearchInput" placeholder="Search MMDB (e.g. Inception)" autocomplete="off">
+                <button id="searchBtn">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+
+            <div class="nav-links">
+                <a href="#" class="nav-link"><i class="fa-solid fa-bookmark"></i> Watchlist</a>
+                <a href="#" class="nav-link sign-in">Sign In</a>
+            </div>
+        </div>
+    </nav>
+
+    <div id="searchLoader" class="loader hidden"></div>
+    <div id="searchError" class="error-msg hidden"></div>
+
+    <main class="page-container">
+        <!-- Movie Details Card (Hidden by default) -->
+        <section id="movieDetailsCard" class="movie-card hidden">
+
+            <!-- Hero Header (Title & Ratings Row) -->
+            <div class="movie-header">
+                <div class="title-block">
+                    <h1 id="movieTitle">Movie Title</h1>
+                    <ul class="meta-list">
+                        <li id="movieYear">2023</li>
+                        <li class="meta-separator">•</li>
+                        <li id="movieRatingAge">PG-13</li>
+                        <li class="meta-separator">•</li>
+                        <li id="movieRuntime">2h 15m</li>
+                    </ul>
+                </div>
+
+                <!-- Ratings Block -->
+                <div class="ratings-block">
+                    <div class="imdb-rating">
+                        <span class="rating-label">MMDB RATING</span>
+                        <div class="rating-score">
+                            <i class="fa-solid fa-star star-filled"></i>
+                            <div>
+                                <span class="score-bold" id="movieRating">8.5</span><span class="score-total">/10</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Media Banner (Poster + Trailer/Plot) -->
+            <div class="media-banner">
+                <div class="poster-wrapper">
+                    <img id="moviePoster" src="" alt="Movie Poster">
+                    <div class="watchlist-ribbon"><i class="fa-solid fa-plus"></i></div>
+                </div>
+
+                <!-- Plot and Cast info -->
+                <div class="details-wrapper">
+                    <div class="genre-tags" id="movieGenreTags">
+                        <!-- Populated via JS -->
+                    </div>
+
+                    <p id="moviePlot" class="plot-text">This is the plot of the movie.</p>
+
+                    <div class="credit-row">
+                        <span class="credit-label">Director</span>
+                        <span class="credit-value text-blue" id="movieDirector">Director Name</span>
+                    </div>
+                    <div class="credit-row">
+                        <span class="credit-label">Writer</span>
+                        <span class="credit-value text-blue" id="movieWriters">Writer Name</span>
+                    </div>
+                    <div class="credit-row border-bottom-none">
+                        <span class="credit-label">Stars</span>
+                        <span class="credit-value text-blue" id="movieStars">Actor Name</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Review Predictor Section (Styled like an IMDb review box) -->
+        <section class="review-section">
+            <div class="section-title">
+                <h3><span class="yellow-bar"></span> User reviews</h3>
+                <span class="subtitle-chevron">Machine Learning Analysis <i
+                        class="fa-solid fa-chevron-right"></i></span>
+            </div>
+
+            <div class="review-box">
+                <div class="review-header">
+                    <h4>Analyze Sentiment</h4>
+                    <p>Enter a review below to test the Logistic Regression model.</p>
+                </div>
+
+                <textarea id="reviewInput" placeholder="Write your review here..."></textarea>
+
+                <div class="action-row">
+                    <button id="predictBtn" class="imdb-btn-primary">Predict Sentiment</button>
+                </div>
+
+                <!-- Results Area -->
+                <div id="resultContainer" class="result-container hidden">
+                    <div class="result-score-box">
+                        <i id="sentimentIcon" class="fa-solid fa-star"></i>
+                        <span id="sentimentLabel">Positive</span>
+                    </div>
+                    <div class="confidence-details">
+                        <p><strong>Confidence Score:</strong> <span id="confidenceValue">95.4%</span></p>
+                        <div class="meter-track">
+                            <div id="meterFill" class="meter-fill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- IMDb Style Footer -->
+    <footer class="imdb-footer">
+        <div class="social-links">
+            <i class="fa-brands fa-tiktok"></i>
+            <i class="fa-brands fa-instagram"></i>
+            <i class="fa-brands fa-twitter"></i>
+            <i class="fa-brands fa-youtube"></i>
+            <i class="fa-brands fa-facebook"></i>
+        </div>
+        <p class="copyright">© 2026 by MMDB (Mayank Movie Database) | Powered by ML & FastAPI</p>
+    </footer>
+
+    <!-- Custom JS -->
+    <script src="script.js"></script>
+</body>
+
+</html>
