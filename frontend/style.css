@@ -500,6 +500,67 @@ textarea:focus {
     background-color: #ff4545;
 }
 
+/* --- Trending Movies Grid --- */
+.trending-section {
+    margin-bottom: 3rem;
+}
+
+.movie-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.grid-item {
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--imdb-border);
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.grid-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+    border-color: var(--text-muted);
+}
+
+.grid-poster {
+    width: 100%;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    display: block;
+    background: #222;
+}
+
+.grid-info {
+    padding: 1rem;
+}
+
+.grid-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.3rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.grid-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.grid-rating i {
+    color: var(--imdb-yellow);
+}
+
 /* --- Footer --- */
 .imdb-footer {
     display: flex;

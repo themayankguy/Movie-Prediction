@@ -8,6 +8,9 @@ const searchError = document.getElementById("searchError");
 
 // Detail Card Elements
 const movieCard = document.getElementById("movieDetailsCard");
+const trendingSection = document.getElementById("trendingSection");
+const trendingGrid = document.getElementById("trendingGrid");
+
 const movieTitle = document.getElementById("movieTitle");
 const movieYear = document.getElementById("movieYear");
 const movieRatingAge = document.getElementById("movieRatingAge");
@@ -45,7 +48,55 @@ predictBtn.addEventListener("click", () => {
     if (text) predictSentiment(text);
 });
 
+// Load default movies on startup
+document.addEventListener("DOMContentLoaded", loadTrendingMovies);
+
 // --- API Calls & Logic ---
+
+async function loadTrendingMovies() {
+    trendingGrid.innerHTML = '<div class="loader"></div>';
+    const defaultMovies = ["Inception", "The Dark Knight", "Oppenheimer", "Interstellar", "The Matrix", "Pulp Fiction"];
+
+    try {
+        const promises = defaultMovies.map(title =>
+            fetch(`${API_BASE_URL}/movie/${encodeURIComponent(title)}`).then(res => res.json())
+        );
+        const movies = await Promise.all(promises);
+
+        trendingGrid.innerHTML = "";
+
+        movies.forEach(data => {
+            if (data.Response === "True") {
+                const card = document.createElement("div");
+                card.className = "grid-item";
+
+                const posterStr = data.Poster !== "N/A" ? data.Poster : "https://via.placeholder.com/300x450?text=No+Poster";
+
+                card.innerHTML = `
+                    <img class="grid-poster" src="${posterStr}" alt="${data.Title}">
+                    <div class="grid-info">
+                        <div class="grid-title" title="${data.Title}">${data.Title}</div>
+                        <div class="grid-rating">
+                            <i class="fa-solid fa-star"></i> ${data.imdbRating}
+                        </div>
+                    </div>
+                `;
+
+                card.addEventListener("click", () => {
+                    searchInput.value = data.Title;
+                    fetchMovieData(data.Title);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+
+                trendingGrid.appendChild(card);
+            }
+        });
+
+    } catch (e) {
+        console.error("Failed to load trending movies", e);
+        trendingGrid.innerHTML = "<p>Couldn't load popular movies right now.</p>";
+    }
+}
 
 async function fetchMovieData(title) {
     searchLoader.classList.remove("hidden");
@@ -92,6 +143,7 @@ async function fetchMovieData(title) {
 
         movieCard.classList.remove("hidden");
         reviewSection.classList.remove("hidden"); // Reveal review box
+        trendingSection.classList.add("hidden"); // Hide the trending grid
 
     } catch (error) {
         searchError.textContent = error.message;
