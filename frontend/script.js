@@ -35,6 +35,10 @@ const closeSidebarBtn = document.getElementById("closeSidebarBtn");
 const sidebarMenu = document.getElementById("sidebarMenu");
 const sidebarOverlay = document.getElementById("sidebarOverlay");
 const navToPredictor = document.getElementById("navToPredictor");
+const navToTopRated = document.getElementById("navToTopRated");
+
+// --- Global Data Cache ---
+let globalMoviesList = [];
 
 // --- Event Listeners ---
 
@@ -54,6 +58,31 @@ function closeSidebar() {
 closeSidebarBtn.addEventListener("click", closeSidebar);
 sidebarOverlay.addEventListener("click", closeSidebar);
 navToPredictor.addEventListener("click", closeSidebar);
+
+navToTopRated.addEventListener("click", (e) => {
+    e.preventDefault();
+    closeSidebar();
+
+    // Sort global library by rating
+    if (globalMoviesList.length > 0) {
+        // Show trending section, hide details
+        movieCard.classList.add("hidden");
+        reviewSection.classList.add("hidden");
+        trendingSection.classList.remove("hidden");
+
+        // Change section title
+        document.querySelector("#trendingSection h3").innerHTML = '<span class="yellow-bar"></span> Top Rated Movies';
+
+        // Sort and Render
+        const sortedMovies = [...globalMoviesList].sort((a, b) => {
+            const ratingA = parseFloat(a.imdbRating) || 0;
+            const ratingB = parseFloat(b.imdbRating) || 0;
+            return ratingB - ratingA; // Descending
+        });
+
+        renderMovieGrid(sortedMovies);
+    }
+});
 
 searchBtn.addEventListener("click", () => {
     const title = searchInput.value.trim();
@@ -95,7 +124,6 @@ async function loadTrendingMovies() {
     ];
 
     trendingGrid.innerHTML = "";
-
     // Process in batches of 10 to avoid blasting the API all at once and causing freezes
     const BATCH_SIZE = 10;
 
@@ -109,37 +137,52 @@ async function loadTrendingMovies() {
 
             const movies = await Promise.all(promises);
 
-            movies.forEach(data => {
-                if (data.Response === "True") {
-                    const card = document.createElement("div");
-                    card.className = "grid-item";
-
-                    const posterStr = data.Poster !== "N/A" ? data.Poster : "https://via.placeholder.com/300x450?text=No+Poster";
-
-                    card.innerHTML = `
-                        <img class="grid-poster" src="${posterStr}" alt="${data.Title}">
-                        <div class="grid-info">
-                            <div class="grid-title" title="${data.Title}">${data.Title}</div>
-                            <div class="grid-rating">
-                                <i class="fa-solid fa-star"></i> ${data.imdbRating}
-                            </div>
-                        </div>
-                    `;
-
-                    card.addEventListener("click", () => {
-                        searchInput.value = data.Title;
-                        fetchMovieData(data.Title);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    });
-
-                    trendingGrid.appendChild(card);
+            // Add valid movies to our global cache
+            movies.forEach(m => {
+                if (m.Response === "True") {
+                    // Check for duplicates just in case
+                    if (!globalMoviesList.find(existing => existing.imdbID === m.imdbID)) {
+                        globalMoviesList.push(m);
+                    }
                 }
             });
+
+            // Re-render the grid as we load
+            renderMovieGrid(globalMoviesList);
 
         } catch (e) {
             console.error("Failed to load a batch of trending movies", e);
         }
     }
+}
+
+function renderMovieGrid(moviesArray) {
+    trendingGrid.innerHTML = "";
+
+    moviesArray.forEach(data => {
+        const card = document.createElement("div");
+        card.className = "grid-item";
+
+        const posterStr = data.Poster !== "N/A" ? data.Poster : "https://via.placeholder.com/300x450?text=No+Poster";
+
+        card.innerHTML = `
+            <img class="grid-poster" src="${posterStr}" alt="${data.Title}">
+            <div class="grid-info">
+                <div class="grid-title" title="${data.Title}">${data.Title}</div>
+                <div class="grid-rating">
+                    <i class="fa-solid fa-star"></i> ${data.imdbRating}
+                </div>
+            </div>
+        `;
+
+        card.addEventListener("click", () => {
+            searchInput.value = data.Title;
+            fetchMovieData(data.Title);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        trendingGrid.appendChild(card);
+    });
 }
 
 async function fetchMovieData(title) {
