@@ -1,9 +1,16 @@
 import streamlit as st
 import joblib
+import requests
+import os
+
+# Define relative paths based on the new structure
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "../backend/models/movie_model.pkl")
+VECTORIZER_PATH = os.path.join(BASE_DIR, "../backend/models/vectorizer.pkl")
 
 # Load model
-model = joblib.load("movie_model.pkl")
-vectorizer = joblib.load("vectorizer.pkl")
+model = joblib.load(MODEL_PATH)
+vectorizer = joblib.load(VECTORIZER_PATH)
 
 st.set_page_config(page_title="🎬 Movie Predictor", layout="centered")
 

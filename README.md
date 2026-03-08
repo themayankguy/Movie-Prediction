@@ -20,11 +20,22 @@ A machine learning based web application that predicts whether a movie review wi
 ## 📁 Project Structure
 Movie-Review-Predictor/
 │
-├── IMDB_Dataset_Cleaned.csv
-├── movie_model.pkl
-├── vectorizer.pkl
-├── train_model.ipynb
-├── app.py
+├── backend/
+│   ├── data/
+│   │   ├── IMDB_Dataset_Cleaned.csv
+│   │   └── IMDB Dataset.csv
+│   ├── models/
+│   │   ├── movie_model.pkl
+│   │   └── vectorizer.pkl
+│   └── notebooks/
+│       ├── train_model.ipynb
+│       ├── model.ipynb
+│       ├── Modelling_Prediction.ipynb
+│       └── cleaning.ipynb
+│
+├── frontend/
+│   └── app.py
+│
 └── README.md
 ---
 ## ⚙️ Installation
@@ -44,9 +55,12 @@ This will generate:
 ---
 
 ## 🌐 Run the Web Application
-From the project folder, run:
+From the `frontend` folder, run:
 
+```bash
+cd frontend
 streamlit run app.py
+```
 
 Open the browser link shown in the terminal.
 ---
