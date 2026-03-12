@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import joblib
 import requests
@@ -10,6 +11,10 @@ import io
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from supabase import create_client, Client
+from dotenv import load_dotenv
+
+# Load .env file for local development
+load_dotenv()
 
 app = FastAPI(title="Movie Success Predictor API")
 
@@ -68,6 +73,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve static files from the root directory when running locally
+# Check if we are running in a local environment (not Vercel)
+if os.getenv("VERCEL") is None:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    app.mount("/", StaticFiles(directory=os.path.join(BASE_DIR, ".."), html=True), name="static")
 
 # Paths to ML assets
 # Vercel treats the root of the project as the base for file access in serverless functions
