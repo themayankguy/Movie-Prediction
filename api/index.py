@@ -14,7 +14,9 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 
 # Load .env file for local development
-load_dotenv()
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ENV_PATH = os.path.join(BASE_DIR, "../.env")
+load_dotenv(ENV_PATH)
 
 app = FastAPI(title="Movie Success Predictor API")
 
@@ -36,11 +38,18 @@ class AuthRequest(BaseModel):
 async def google_auth(request: AuthRequest):
     try:
         # Verify Google ID Token
-        print(f"Verifying token for audience: {GOOGLE_CLIENT_ID}")
+        target_audience = GOOGLE_CLIENT_ID
+        if not target_audience:
+             target_audience = os.getenv("GOOGLE_CLIENT_ID", "")
+             
+        print(f"Verifying token for audience: '{target_audience}'")
+        if not target_audience:
+            raise HTTPException(status_code=500, detail="GOOGLE_CLIENT_ID is not configured on the server")
+
         id_info = id_token.verify_oauth2_token(
             request.token, 
             google_requests.Request(), 
-            audience=GOOGLE_CLIENT_ID
+            audience=target_audience
         )
 
         user_email = id_info.get("email")
