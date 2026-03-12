@@ -410,22 +410,29 @@ function initGoogleSignIn() {
 }
 
 async function handleCredentialResponse(response) {
+    console.log("Google Credential Received", response);
     const idToken = response.credential;
     
     try {
+        console.log("Verifying token with backend...");
         const res = await fetch(`${API_BASE_URL}/auth/google`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: idToken })
         });
 
-        if (!res.ok) throw new Error("Auth failed");
+        if (!res.ok) {
+            const errBody = await res.json();
+            throw new Error(errBody.detail || "Auth failed");
+        }
 
         const userData = await res.json();
+        console.log("Auth Success:", userData);
         updateAuthUI(userData);
         localStorage.setItem("user", JSON.stringify(userData));
     } catch (err) {
         console.error("Login Error:", err);
+        alert("Login failed: " + err.message);
     }
 }
 
@@ -497,7 +504,15 @@ async function loadTrendingMovies() {
 
         try {
             const promises = batch.map(title =>
-                fetch(`${API_BASE_URL}/movie/${encodeURIComponent(title)}`).then(res => res.json())
+                fetch(`${API_BASE_URL}/movie/${encodeURIComponent(title)}`)
+                    .then(res => {
+                        if (!res.ok) return { Response: "False", Error: "API Error" };
+                        return res.json();
+                    })
+                    .catch(err => {
+                        console.error(`Error fetching ${title}:`, err);
+                        return { Response: "False", Error: "Network Error" };
+                    })
             );
 
             const movies = await Promise.all(promises);
@@ -505,7 +520,6 @@ async function loadTrendingMovies() {
             // Add valid movies to our global cache
             movies.forEach(m => {
                 if (m.Response === "True") {
-                    // Check for duplicates just in case
                     if (!globalMoviesList.find(existing => existing.imdbID === m.imdbID)) {
                         globalMoviesList.push(m);
                     }
@@ -513,11 +527,23 @@ async function loadTrendingMovies() {
             });
 
             // Re-render the grid as we load
-            renderMovieGrid(globalMoviesList);
+            if (globalMoviesList.length > 0) {
+                renderMovieGrid(globalMoviesList);
+            }
 
         } catch (e) {
             console.error("Failed to load a batch of trending movies", e);
         }
+    }
+
+    if (globalMoviesList.length === 0) {
+        trendingGrid.innerHTML = `
+            <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                <i class="fa-solid fa-circle-exclamation" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                <p>Could not load movies. Please check your internet or try refreshing.</p>
+                <button onclick="location.reload()" class="imdb-btn" style="margin-top: 1rem;">Retry</button>
+            </div>
+        `;
     }
 }
 
