@@ -416,7 +416,17 @@ function updateAuthUI(user) {
     if (user) {
         authContainer.classList.add("hidden");
         userProfile.classList.remove("hidden");
-        userAvatar.src = user.picture || "https://via.placeholder.com/32";
+        
+        // Handle profile picture with fallback
+        if (user.picture) {
+            userAvatar.src = user.picture;
+            userAvatar.onerror = () => {
+                userAvatar.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(user.name) + "&background=f5c518&color=000";
+            };
+        } else {
+            userAvatar.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(user.name) + "&background=f5c518&color=000";
+        }
+        
         userName.textContent = user.name.split(' ')[0];
     } else {
         authContainer.classList.remove("hidden");
