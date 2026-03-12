@@ -10,7 +10,6 @@ import pandas as pd
 import io
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
-from supabase import create_client, Client
 from dotenv import load_dotenv
 
 # Load .env file for local development
@@ -26,18 +25,9 @@ else:
 
 app = FastAPI(title="Movie Success Predictor API")
 
-# Supabase Config (User needs to set these in Vercel Env Variables)
-SUPABASE_URL = os.getenv("SUPABASE_URL", "")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "") # Use service role for backend logic
-supabase: Client = None
-
-if SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
 # Google Config
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 print(f"GOOGLE_CLIENT_ID Loaded: '{GOOGLE_CLIENT_ID[:10]}...'")
-print(f"SUPABASE_URL Loaded: {bool(SUPABASE_URL)}")
 print(f"--- END STARTUP LOG ---")
 
 class AuthRequest(BaseModel):
@@ -64,23 +54,6 @@ async def google_auth(request: AuthRequest):
         user_name = id_info.get("name")
         user_picture = id_info.get("picture")
 
-        # Save to Database (Supabase)
-        if supabase:
-            from datetime import datetime
-            user_data = {
-                "email": user_email,
-                "name": user_name,
-                "picture": user_picture,
-                "last_login": datetime.utcnow().isoformat()
-            }
-            # Upsert user data
-            try:
-                result = supabase.table("users").upsert(user_data, on_conflict="email").execute()
-                print(f"Supabase upsert success: {result}")
-            except Exception as db_err:
-                print(f"Supabase error: {db_err}")
-        else:
-            print("Supabase client not initialized - check env variables")
 
         return {
             "email": user_email,
@@ -212,20 +185,30 @@ async def batch_predict(file: UploadFile = File(...)):
 
 @app.get("/api/movie/{title}")
 async def get_movie_details(title: str):
-    if not title.strip():
-        raise HTTPException(status_code=400, detail="Movie title cannot be empty.")
+    try:
+        if not title.strip():
+            raise HTTPException(status_code=400, detail="Movie title cannot be empty.")
+            
+        url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}"
+        response = requests.get(url)
         
-    url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}"
-    response = requests.get(url)
-    
-    if response.status_code != 200:
-         raise HTTPException(status_code=500, detail="Error fetching data from OMDb API")
-         
-    data = response.json()
-    if data.get("Response") == "False":
-        raise HTTPException(status_code=404, detail="Movie not found or API key invalid.")
-        
-    return data
+        if response.status_code != 200:
+             print(f"OMDb Error for {title}: {response.status_code} - {response.text}")
+             raise HTTPException(status_code=500, detail="Error fetching data from OMDb API")
+             
+        data = response.json()
+        if data.get("Response") == "False":
+            print(f"OMDb Movie Not Found for {title}: {data.get('Error')}")
+            raise HTTPException(status_code=404, detail=f"Movie not found: {data.get('Error')}")
+            
+        return data
+    except Exception as e:
+        import traceback
+        print(f"GET_MOVIE_ERROR for {title}:")
+        print(traceback.format_exc())
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Serve static files LAST so it doesn't shadow other routes
 if os.getenv("VERCEL") is None:

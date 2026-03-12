@@ -1,4 +1,4 @@
-const API_BASE_URL = window.location.origin + "/api";
+const API_BASE_URL = "/api";
 const GOOGLE_CLIENT_ID = "980250266647-6e5i3e7r1km3jkg1fvokuivhromsdvs0.apps.googleusercontent.com";
 
 // --- DOM Elements ---
@@ -414,8 +414,9 @@ async function handleCredentialResponse(response) {
     const idToken = response.credential;
     
     try {
-        console.log("Verifying token with backend...");
-        const res = await fetch(`${API_BASE_URL}/auth/google`, {
+        const fetchUrl = `${API_BASE_URL}/auth/google`;
+        console.log(`Verifying token with backend at: ${fetchUrl}`);
+        const res = await fetch(fetchUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: idToken })
