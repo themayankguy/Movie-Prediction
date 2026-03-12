@@ -36,10 +36,11 @@ class AuthRequest(BaseModel):
 async def google_auth(request: AuthRequest):
     try:
         # Verify Google ID Token
+        print(f"Verifying token for audience: {GOOGLE_CLIENT_ID}")
         id_info = id_token.verify_oauth2_token(
             request.token, 
             google_requests.Request(), 
-            GOOGLE_CLIENT_ID
+            audience=GOOGLE_CLIENT_ID
         )
 
         user_email = id_info.get("email")
