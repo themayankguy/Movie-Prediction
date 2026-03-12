@@ -15,8 +15,14 @@ from dotenv import load_dotenv
 
 # Load .env file for local development
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ENV_PATH = os.path.join(BASE_DIR, "../.env")
-load_dotenv(ENV_PATH)
+ENV_PATH = os.path.abspath(os.path.join(BASE_DIR, "..", ".env"))
+print(f"--- STARTUP LOG ---")
+print(f"Looking for .env at: {ENV_PATH}")
+if os.path.exists(ENV_PATH):
+    print(".env file exists")
+    load_dotenv(ENV_PATH)
+else:
+    print(".env file NOT FOUND")
 
 app = FastAPI(title="Movie Success Predictor API")
 
@@ -30,6 +36,9 @@ if SUPABASE_URL and SUPABASE_KEY:
 
 # Google Config
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+print(f"GOOGLE_CLIENT_ID Loaded: '{GOOGLE_CLIENT_ID[:10]}...'")
+print(f"SUPABASE_URL Loaded: {bool(SUPABASE_URL)}")
+print(f"--- END STARTUP LOG ---")
 
 class AuthRequest(BaseModel):
     token: str
@@ -38,13 +47,12 @@ class AuthRequest(BaseModel):
 async def google_auth(request: AuthRequest):
     try:
         # Verify Google ID Token
-        target_audience = GOOGLE_CLIENT_ID
-        if not target_audience:
-             target_audience = os.getenv("GOOGLE_CLIENT_ID", "")
+        target_audience = GOOGLE_CLIENT_ID or os.getenv("GOOGLE_CLIENT_ID", "")
+        # Forced fallback for local reliability
+        if not target_audience or target_audience == "":
+            target_audience = "980250266647-6e5i3e7r1km3jkg1fvokuivhromsdvs0.apps.googleusercontent.com"
              
         print(f"Verifying token for audience: '{target_audience}'")
-        if not target_audience:
-            raise HTTPException(status_code=500, detail="GOOGLE_CLIENT_ID is not configured on the server")
 
         id_info = id_token.verify_oauth2_token(
             request.token, 
@@ -140,7 +148,7 @@ async def predict_sentiment(request: ReviewRequest):
         
         return {
             "sentiment": sentiment,
-            "confidence": round(prob * 100, 2),
+            "confidence": round(float(prob * 100), 2),
             "probability_score": float(prob),
             "word_impacts": word_impacts
         }
