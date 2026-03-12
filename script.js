@@ -1,5 +1,5 @@
 const API_BASE_URL = window.location.origin + "/api";
-const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"; // User needs to replace this
+const GOOGLE_CLIENT_ID = "980250266647-6e5i3e7r1km3jkg1fvokuivhromsdvs0.apps.googleusercontent.com";
 
 // --- DOM Elements ---
 const searchInput = document.getElementById("movieSearchInput");
