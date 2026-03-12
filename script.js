@@ -379,17 +379,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // --- Auth Logic ---
 function initGoogleSignIn() {
-    if (typeof google === "undefined") return;
+    // If google script not loaded yet, wait and retry
+    if (typeof google === "undefined" || !google.accounts) {
+        console.log("Waiting for Google script to load...");
+        setTimeout(initGoogleSignIn, 500);
+        return;
+    }
 
     google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
-        callback: handleCredentialResponse
+        callback: handleCredentialResponse,
+        auto_select: false,
+        cancel_on_tap_outside: true
     });
 
-    google.accounts.id.renderButton(
-        document.getElementById("g_id_signin"),
-        { theme: "outline", size: "medium", type: "standard", shape: "pill", text: "signin_with" }
-    );
+    const signInDiv = document.getElementById("g_id_signin");
+    if (signInDiv) {
+        google.accounts.id.renderButton(
+            signInDiv,
+            { 
+                theme: "outline", 
+                size: "large", 
+                type: "standard", 
+                shape: "pill", 
+                text: "signin_with",
+                logo_alignment: "left"
+            }
+        );
+    }
 }
 
 async function handleCredentialResponse(response) {
