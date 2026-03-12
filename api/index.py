@@ -48,14 +48,21 @@ async def google_auth(request: AuthRequest):
 
         # Save to Database (Supabase)
         if supabase:
+            from datetime import datetime
             user_data = {
                 "email": user_email,
                 "name": user_name,
                 "picture": user_picture,
-                "last_login": "now()"
+                "last_login": datetime.utcnow().isoformat()
             }
             # Upsert user data
-            supabase.table("users").upsert(user_data, on_conflict="email").execute()
+            try:
+                result = supabase.table("users").upsert(user_data, on_conflict="email").execute()
+                print(f"Supabase upsert success: {result}")
+            except Exception as db_err:
+                print(f"Supabase error: {db_err}")
+        else:
+            print("Supabase client not initialized - check env variables")
 
         return {
             "email": user_email,
@@ -63,6 +70,7 @@ async def google_auth(request: AuthRequest):
             "picture": user_picture
         }
     except Exception as e:
+        print(f"Auth error: {e}")
         raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
 
 # Allow CORS
@@ -74,11 +82,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve static files from the root directory when running locally
-# Check if we are running in a local environment (not Vercel)
-if os.getenv("VERCEL") is None:
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    app.mount("/", StaticFiles(directory=os.path.join(BASE_DIR, ".."), html=True), name="static")
+# ML assets and logic follow...
 
 # Paths to ML assets
 # Vercel treats the root of the project as the base for file access in serverless functions
@@ -204,3 +208,10 @@ async def get_movie_details(title: str):
         raise HTTPException(status_code=404, detail="Movie not found or API key invalid.")
         
     return data
+
+# Serve static files LAST so it doesn't shadow other routes
+if os.getenv("VERCEL") is None:
+    import os
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    # Mount at the end to avoid shadowing /api routes
+    app.mount("/", StaticFiles(directory=os.path.join(BASE_DIR, ".."), html=True), name="static")
