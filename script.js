@@ -1,4 +1,5 @@
 const API_BASE_URL = window.location.origin + "/api";
+const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"; // User needs to replace this
 
 // --- DOM Elements ---
 const searchInput = document.getElementById("movieSearchInput");
@@ -53,6 +54,13 @@ const csvError = document.getElementById("csvError");
 const statsModalOverlay = document.getElementById("statsModalOverlay");
 const navToStatsModal = document.getElementById("navToStatsModal");
 const closeStatsModalBtn = document.getElementById("closeStatsModalBtn");
+
+// Auth Elements
+const authContainer = document.getElementById("authContainer");
+const userProfile = document.getElementById("userProfile");
+const userAvatar = document.getElementById("userAvatar");
+const userName = document.getElementById("userName");
+const logoutBtn = document.getElementById("logoutBtn");
 
 // Trailer Elements
 const watchTrailerBtn = document.getElementById("watchTrailerBtn");
@@ -364,7 +372,69 @@ backToMoviesBtn.addEventListener("click", returnToHome);
 navLogo.addEventListener("click", returnToHome);
 
 // Load default movies on startup
-document.addEventListener("DOMContentLoaded", loadTrendingMovies);
+document.addEventListener("DOMContentLoaded", () => {
+    loadTrendingMovies();
+    initGoogleSignIn();
+});
+
+// --- Auth Logic ---
+function initGoogleSignIn() {
+    if (typeof google === "undefined") return;
+
+    google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse
+    });
+
+    google.accounts.id.renderButton(
+        document.getElementById("g_id_signin"),
+        { theme: "outline", size: "medium", type: "standard", shape: "pill", text: "signin_with" }
+    );
+}
+
+async function handleCredentialResponse(response) {
+    const idToken = response.credential;
+    
+    try {
+        const res = await fetch(`${API_BASE_URL}/auth/google`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: idToken })
+        });
+
+        if (!res.ok) throw new Error("Auth failed");
+
+        const userData = await res.json();
+        updateAuthUI(userData);
+        localStorage.setItem("user", JSON.stringify(userData));
+    } catch (err) {
+        console.error("Login Error:", err);
+    }
+}
+
+function updateAuthUI(user) {
+    if (user) {
+        authContainer.classList.add("hidden");
+        userProfile.classList.remove("hidden");
+        userAvatar.src = user.picture || "https://via.placeholder.com/32";
+        userName.textContent = user.name.split(' ')[0];
+    } else {
+        authContainer.classList.remove("hidden");
+        userProfile.classList.add("hidden");
+    }
+}
+
+logoutBtn.addEventListener("click", () => {
+    localStorage.removeItem("user");
+    updateAuthUI(null);
+    location.reload(); // Refresh to clear state
+});
+
+// Check for existing session
+const savedUser = localStorage.getItem("user");
+if (savedUser) {
+    updateAuthUI(JSON.parse(savedUser));
+}
 
 // --- API Calls & Logic ---
 
