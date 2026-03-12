@@ -23,6 +23,9 @@
 
     <!-- Chart.js for Data Visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
@@ -157,7 +160,14 @@
 
             <div class="nav-links">
                 <a href="#" class="nav-link"><i class="fa-solid fa-bookmark"></i> Watchlist</a>
-                <a href="#" class="nav-link sign-in">Sign In</a>
+                <div id="authContainer">
+                    <div id="g_id_signin"></div>
+                </div>
+                <div id="userProfile" class="user-profile hidden">
+                    <img id="userAvatar" src="" alt="User">
+                    <span id="userName">User</span>
+                    <button id="logoutBtn" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i></button>
+                </div>
             </div>
         </div>
     </nav>

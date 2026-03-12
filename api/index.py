@@ -7,8 +7,58 @@ import requests
 import os
 import pandas as pd
 import io
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+from supabase import create_client, Client
 
 app = FastAPI(title="Movie Success Predictor API")
+
+# Supabase Config (User needs to set these in Vercel Env Variables)
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "") # Use service role for backend logic
+supabase: Client = None
+
+if SUPABASE_URL and SUPABASE_KEY:
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Google Config
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+
+class AuthRequest(BaseModel):
+    token: str
+
+@app.post("/api/auth/google")
+async def google_auth(request: AuthRequest):
+    try:
+        # Verify Google ID Token
+        id_info = id_token.verify_oauth2_token(
+            request.token, 
+            google_requests.Request(), 
+            GOOGLE_CLIENT_ID
+        )
+
+        user_email = id_info.get("email")
+        user_name = id_info.get("name")
+        user_picture = id_info.get("picture")
+
+        # Save to Database (Supabase)
+        if supabase:
+            user_data = {
+                "email": user_email,
+                "name": user_name,
+                "picture": user_picture,
+                "last_login": "now()"
+            }
+            # Upsert user data
+            supabase.table("users").upsert(user_data, on_conflict="email").execute()
+
+        return {
+            "email": user_email,
+            "name": user_name,
+            "picture": user_picture
+        }
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
 
 # Allow CORS
 app.add_middleware(
